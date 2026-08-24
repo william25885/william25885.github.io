@@ -398,6 +398,13 @@ a.project:hover h3 {
   white-space: nowrap;
 }
 
+/* Uppercasing a formula turns lowercase Greek into capitals — an eta header
+   became a capital Eta, which is indistinguishable from a Latin H. */
+.prose th .katex {
+  text-transform: none;
+  font-size: 1em;
+}
+
 .prose tbody tr:last-child td { border-bottom: none; }
 
 /* Code ------------------------------------------------------ */
@@ -579,4 +586,42 @@ footer .compact span[aria-hidden] { margin: 0 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   .nav { border-bottom-color: var(--border); }
+}
+
+/* ============================================================
+   Figure grids
+
+   Adjacent figures are laid out side by side so they can be compared
+   directly. A trailing odd figure spans the full width rather than sitting
+   in a half-empty row.
+   ============================================================ */
+
+.prose .figure-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px 22px;
+  margin: 28px 0 0;
+  align-items: start;
+}
+
+.prose .figure-grid .figure {
+  margin: 0;
+}
+
+.prose .figure-grid .figure:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.prose .figure-grid figcaption {
+  font-size: 13px;
+}
+
+@media (max-width: 620px) {
+  .prose .figure-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prose .figure-grid .figure:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
 }

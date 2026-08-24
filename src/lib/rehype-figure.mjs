@@ -1,42 +1,92 @@
-import { visit } from 'unist-util-visit';
-
 const isImg = (n) => n.type === 'element' && n.tagName === 'img';
 const isBlank = (n) => n.type === 'text' && !n.value.trim();
+const isFigure = (n) => n.type === 'element' && n.tagName === 'figure';
+
+/** A paragraph holding nothing but one image, with its alt text as caption. */
+function toFigure(node) {
+  if (node.type !== 'element' || node.tagName !== 'p') return null;
+
+  const meaningful = node.children.filter((c) => !isBlank(c));
+  if (meaningful.length !== 1 || !isImg(meaningful[0])) return null;
+
+  const img = meaningful[0];
+  const alt = img.properties?.alt;
+  const children = [img];
+
+  if (alt) {
+    children.push({
+      type: 'element',
+      tagName: 'figcaption',
+      properties: {},
+      children: [{ type: 'text', value: alt }],
+    });
+  }
+
+  return {
+    type: 'element',
+    tagName: 'figure',
+    properties: { className: ['figure'] },
+    children,
+  };
+}
 
 /**
- * Turn a paragraph containing nothing but one image into a <figure>, using the
- * image's alt text as a visible <figcaption>.
+ * Promote lone images to captioned figures, and lay out runs of adjacent
+ * figures as a grid.
  *
- * Images inside table cells are left alone — those are already labelled by
- * their row and column headers.
+ * Figures that sit together are almost always meant to be compared, and
+ * comparison is impossible when each one is a screen tall and the reader has
+ * to hold the previous one in memory.
+ *
+ * Images inside table cells are left alone — their row and column headers
+ * already label them.
+ *
+ * The walk is an explicit single pass rather than `visit`, because the grid
+ * this creates is itself a node holding a run of adjacent figures: a
+ * general-purpose traversal descends into it and wraps them again, and again.
  */
-export default function rehypeFigure() {
-  return (tree) => {
-    visit(tree, 'element', (node, index, parent) => {
-      if (node.tagName !== 'p' || !parent || index === undefined) return;
+function walk(node) {
+  if (!node.children || !node.children.length) return;
 
-      const meaningful = node.children.filter((c) => !isBlank(c));
-      if (meaningful.length !== 1 || !isImg(meaningful[0])) return;
+  const converted = node.children.map((child) => {
+    const fig = toFigure(child);
+    if (fig) return fig;
+    walk(child);
+    return child;
+  });
 
-      const img = meaningful[0];
-      const alt = img.properties?.alt;
-      const children = [img];
+  const out = [];
+  let run = [];
 
-      if (alt) {
-        children.push({
-          type: 'element',
-          tagName: 'figcaption',
-          properties: {},
-          children: [{ type: 'text', value: alt }],
-        });
-      }
-
-      parent.children[index] = {
+  const flush = () => {
+    if (run.length > 1) {
+      out.push({
         type: 'element',
-        tagName: 'figure',
-        properties: { className: ['figure'] },
-        children,
-      };
-    });
+        tagName: 'div',
+        properties: { className: ['figure-grid'] },
+        children: run,
+      });
+    } else {
+      out.push(...run);
+    }
+    run = [];
   };
+
+  for (const child of converted) {
+    if (isFigure(child)) {
+      run.push(child);
+    } else if (run.length && isBlank(child)) {
+      // Whitespace separating figures in a run; drop it rather than break the run.
+    } else {
+      flush();
+      out.push(child);
+    }
+  }
+  flush();
+
+  node.children = out;
+}
+
+export default function rehypeFigure() {
+  return (tree) => walk(tree);
 }
