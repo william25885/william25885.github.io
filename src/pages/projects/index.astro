@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { getCollection } from 'astro:content';
+import { tagSlug } from '../../lib/tags';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+
+// Only offer filters that actually narrow the list — a tag matching a single
+// project is a link, not a filter.
+const counts = new Map<string, number>();
+for (const p of projects) {
+  for (const tag of p.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+}
+const filters = [...counts.entries()]
+  .filter(([, n]) => n > 1)
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .map(([tag]) => tag);
+---
+<BaseLayout
+  title="Projects — Ting-Chen Cho"
+  description="All projects by Ting-Chen Cho, spanning reinforcement learning, generative modelling, self-supervised learning and systems engineering."
+>
+  <header class="page-header">
+    <h1>Projects</h1>
+    <p class="intro">
+      Eight projects in reinforcement learning, generative modelling, self-supervised learning and
+      systems engineering. Each page covers the question, the method, and what the results actually
+      showed.
+    </p>
+    <div class="filter">
+      <span class="filter-label">Filter</span>
+      <a href="/projects/" aria-current="true">All</a>
+      {filters.map((tag) => <a href={`/projects/tag/${tagSlug(tag)}/`}>{tag}</a>)}
+    </div>
+  </header>
+
+  <section>
+    {projects.map((p) => (
+      <ProjectCard
+        id={p.id}
+        title={p.data.title}
+        summary={p.data.summary}
+        tags={p.data.tags}
+        context={p.data.context}
+      />
+    ))}
+  </section>
+</BaseLayout>

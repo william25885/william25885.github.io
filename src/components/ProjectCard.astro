@@ -1,0 +1,19 @@
+---
+import TagList from './TagList.astro';
+
+interface Props {
+  id: string;
+  title: string;
+  summary: string;
+  tags: string[];
+  context?: string;
+}
+
+const { id, title, summary, tags, context } = Astro.props;
+---
+<a class="project" href={`/projects/${id}/`}>
+  <h3>{title}</h3>
+  <p>{summary}</p>
+  {context && <p class="meta">{context}</p>}
+  <TagList tags={tags} />
+</a>

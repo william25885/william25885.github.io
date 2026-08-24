@@ -1,0 +1,12 @@
+---
+const path = Astro.url.pathname;
+const isProjects = path.startsWith('/projects');
+---
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">Ting-Chen Cho</a>
+    <a href="/projects/" aria-current={isProjects ? 'page' : undefined}>Projects</a>
+    <a href="https://github.com/william25885">GitHub</a>
+    <a href="/resume.pdf">CV</a>
+  </div>
+</nav>

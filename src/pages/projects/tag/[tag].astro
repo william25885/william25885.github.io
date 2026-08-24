@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjectCard from '../../../components/ProjectCard.astro';
+import { getCollection } from 'astro:content';
+import { tagSlug } from '../../../lib/tags';
+
+export async function getStaticPaths() {
+  const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+    (a, b) => a.data.order - b.data.order,
+  );
+
+  const counts = new Map<string, number>();
+  for (const p of projects) {
+    for (const tag of p.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+
+  const filters = [...counts.entries()]
+    .filter(([, n]) => n > 1)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([tag]) => tag);
+
+  return filters.map((tag) => ({
+    params: { tag: tagSlug(tag) },
+    props: {
+      tag,
+      filters,
+      matches: projects.filter((p) => p.data.tags.includes(tag)),
+    },
+  }));
+}
+
+const { tag, filters, matches } = Astro.props;
+---
+<BaseLayout
+  title={`${tag} — Projects — Ting-Chen Cho`}
+  description={`Projects by Ting-Chen Cho tagged ${tag}.`}
+>
+  <header class="page-header">
+    <h1>Projects</h1>
+    <p class="intro">
+      Showing {matches.length} projects tagged <strong>{tag}</strong>.
+    </p>
+    <div class="filter">
+      <span class="filter-label">Filter</span>
+      <a href="/projects/">All</a>
+      {filters.map((t) => (
+        <a href={`/projects/tag/${tagSlug(t)}/`} aria-current={t === tag ? 'true' : undefined}>
+          {t}
+        </a>
+      ))}
+    </div>
+  </header>
+
+  <section>
+    {matches.map((p) => (
+      <ProjectCard
+        id={p.id}
+        title={p.data.title}
+        summary={p.data.summary}
+        tags={p.data.tags}
+        context={p.data.context}
+      />
+    ))}
+  </section>
+</BaseLayout>

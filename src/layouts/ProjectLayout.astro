@@ -1,0 +1,47 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import TagList from '../components/TagList.astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  prev?: CollectionEntry<'projects'>;
+  next?: CollectionEntry<'projects'>;
+}
+
+const { project, prev, next } = Astro.props;
+const { title, summary, tags, repo, liveDemo, context } = project.data;
+---
+<BaseLayout title={`${title} — Ting-Chen Cho`} description={summary}>
+  <header class="project-header">
+    <h1>{title}</h1>
+    <p class="lede">{summary}</p>
+    <TagList tags={tags} />
+    <p class="meta">
+      {context && <span>{context}</span>}
+      {liveDemo && <a href={liveDemo}>Live site</a>}
+      {repo && <a href={repo}>Source</a>}
+    </p>
+  </header>
+
+  <article class="prose">
+    <slot />
+  </article>
+
+  {(prev || next) && (
+    <nav class="pagination">
+      {prev && (
+        <div>
+          <span class="dir">Previous</span>
+          <a href={`/projects/${prev.id}/`}>{prev.data.title}</a>
+        </div>
+      )}
+      {next && (
+        <div class="next">
+          <span class="dir">Next</span>
+          <a href={`/projects/${next.id}/`}>{next.data.title}</a>
+        </div>
+      )}
+    </nav>
+  )}
+</BaseLayout>
