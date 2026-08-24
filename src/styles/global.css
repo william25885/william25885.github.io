@@ -77,8 +77,9 @@ a:hover { border-bottom-color: var(--accent); }
   z-index: 20;
   border-bottom: 1px solid transparent;
   background: color-mix(in srgb, var(--bg) 93%, transparent);
+  /* Written unprefixed on purpose: hand-writing the -webkit- form makes
+     Lightning CSS treat the standard property as redundant and drop it. */
   backdrop-filter: saturate(180%) blur(12px);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
 }
 
 /* No backdrop-filter support: keep the bar opaque rather than see-through. */
