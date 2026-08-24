@@ -518,111 +518,65 @@ footer p { margin: 0; }
 footer .compact span[aria-hidden] { margin: 0 2px; }
 
 /* ============================================================
-   Scroll-driven motion
+   Reveal on entry
 
-   Everything here is progressive enhancement, guarded three ways:
+   Time-based, not scroll-linked. CSS scroll-driven animations tie progress
+   to scroll position, so at any normal scrolling speed the reveal completes
+   instantly and is never actually seen. An entry trigger plus a transition
+   plays for a fixed duration however fast the reader moves.
 
-   1. `prefers-reduced-motion` — readers who ask for stillness get it.
-   2. `@supports (animation-timeline: view())` — Firefox still has
-      scroll-driven animations behind a flag, so it must never see the
-      hidden starting state. Without this guard its readers get a blank page.
-   3. Nothing above the fold participates. The name and the intro are painted
-      immediately; a reviewer skimming must never wait on an animation.
+   The hidden start state is gated on `.js-reveal`, a class the inline script
+   in BaseLayout sets before first paint. If that script never runs, nothing
+   is ever hidden.
    ============================================================ */
 
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .reveal {
-      animation-name: reveal-rise;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-duration: auto;
-      animation-timeline: view();
-      animation-range: entry 0% entry 45%;
-    }
+  .js-reveal .reveal,
+  .js-reveal .prose .figure {
+    opacity: 0;
+    transform: translateY(26px);
+    transition:
+      opacity 620ms cubic-bezier(0.2, 0, 0, 1),
+      transform 620ms cubic-bezier(0.2, 0, 0, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
 
-    @keyframes reveal-rise {
-      from {
-        opacity: 0;
-        transform: translateY(18px);
-      }
-      to {
-        opacity: 1;
-        transform: none;
-      }
-    }
+  .js-reveal .prose .figure {
+    transform: translateY(22px) scale(0.985);
+  }
 
-    /* Section rules draw themselves in from the left. */
-    .reveal-rule {
-      border-bottom-color: transparent;
-      background-image: linear-gradient(var(--border), var(--border));
-      background-repeat: no-repeat;
-      background-position: 0 100%;
-      background-size: 0% 1px;
-      animation-name: reveal-underline;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-duration: auto;
-      animation-timeline: view();
-      animation-range: entry 0% entry 45%;
-    }
+  .js-reveal .reveal.is-visible,
+  .js-reveal .prose .figure.is-visible {
+    opacity: 1;
+    transform: none;
+  }
 
-    @keyframes reveal-underline {
-      from { background-size: 0% 1px; }
-      to   { background-size: 100% 1px; }
-    }
+  /* Section rules draw in from the left. */
+  .js-reveal .reveal-rule {
+    background-image: linear-gradient(var(--border), var(--border));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1px;
+    border-bottom-color: transparent;
+    transition: background-size 760ms cubic-bezier(0.2, 0, 0, 1);
+  }
 
-    /* Figures get a touch of scale on top of the rise — they are the
-       imagery on these pages, so they can afford slightly more presence. */
-    .prose .figure {
-      animation-name: reveal-figure;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-duration: auto;
-      animation-timeline: view();
-      animation-range: entry 0% entry 45%;
-    }
-
-    @keyframes reveal-figure {
-      from {
-        opacity: 0;
-        transform: translateY(16px) scale(0.985);
-      }
-      to {
-        opacity: 1;
-        transform: none;
-      }
-    }
-
-    /* The bar is transparent over the top of the page and resolves into a
-       surface once the reader has scrolled past the header. */
-    .nav {
-      animation-name: nav-settle;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-duration: auto;
-      animation-timeline: scroll();
-      animation-range: 0 90px;
-    }
-
-    @keyframes nav-settle {
-      from {
-        background-color: transparent;
-        border-bottom-color: transparent;
-      }
-      to {
-        background-color: color-mix(in srgb, var(--bg) 93%, transparent);
-        border-bottom-color: var(--border);
-      }
-    }
+  .js-reveal .reveal-rule.is-visible {
+    background-size: 100% 1px;
   }
 }
 
-/* Reduced motion, or no scroll-timeline support: the nav is simply a bar. */
-@media (prefers-reduced-motion: reduce) {
-  .nav { border-bottom-color: var(--border); }
+/* The bar picks up its surface once the reader has scrolled off the top. */
+.nav {
+  transition:
+    background-color 220ms ease,
+    border-bottom-color 220ms ease;
 }
 
-@supports not (animation-timeline: view()) {
+.nav.is-scrolled {
+  border-bottom-color: var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
   .nav { border-bottom-color: var(--border); }
 }

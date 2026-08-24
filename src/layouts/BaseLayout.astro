@@ -27,6 +27,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
     <meta name="twitter:card" content="summary" />
+    <script is:inline>
+      // Set before first paint so the hidden start state never flashes. If
+      // this never runs — script blocked, JS off — no element is ever hidden.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('js-reveal');
+      }
+    </script>
   </head>
   <body>
     <Nav />
@@ -34,5 +41,46 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
       <slot />
       <Footer />
     </div>
+
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        const nav = document.querySelector('.nav');
+
+        if (nav) {
+          const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 8);
+          addEventListener('scroll', onScroll, { passive: true });
+          onScroll();
+        }
+
+        if (!root.classList.contains('js-reveal')) return;
+
+        const targets = document.querySelectorAll('.reveal, .prose .figure');
+        if (!targets.length) return;
+
+        if (!('IntersectionObserver' in window)) {
+          targets.forEach((el) => el.classList.add('is-visible'));
+          return;
+        }
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            // Stagger whatever crosses in together, so a group of cards
+            // arrives in sequence rather than as a single block.
+            let step = 0;
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.style.setProperty('--reveal-delay', step * 70 + 'ms');
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
+              step++;
+            }
+          },
+          { rootMargin: '0px 0px -12% 0px', threshold: 0.08 }
+        );
+
+        targets.forEach((el) => observer.observe(el));
+      })();
+    </script>
   </body>
 </html>
