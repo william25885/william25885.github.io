@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { project, prev, next } = Astro.props;
-const { title, summary, tags, repo, liveDemo, context } = project.data;
+const { title, summary, tags, repo, liveDemo } = project.data;
 ---
 <BaseLayout title={`${title} — Ting-Chen Cho`} description={summary}>
   <header class="project-header">
@@ -18,7 +18,6 @@ const { title, summary, tags, repo, liveDemo, context } = project.data;
     <p class="lede">{summary}</p>
     <TagList tags={tags} />
     <p class="meta">
-      {context && <span>{context}</span>}
       {liveDemo && <a href={liveDemo}>Live site</a>}
       {repo && <a href={repo}>Source</a>}
     </p>

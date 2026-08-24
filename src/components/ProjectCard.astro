@@ -6,14 +6,12 @@ interface Props {
   title: string;
   summary: string;
   tags: string[];
-  context?: string;
 }
 
-const { id, title, summary, tags, context } = Astro.props;
+const { id, title, summary, tags } = Astro.props;
 ---
 <a class="project reveal" href={`/projects/${id}/`}>
   <h3>{title}</h3>
   <p>{summary}</p>
-  {context && <p class="meta">{context}</p>}
   <TagList tags={tags} />
 </a>
