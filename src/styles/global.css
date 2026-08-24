@@ -72,8 +72,18 @@ a:hover { border-bottom-color: var(--accent); }
    ============================================================ */
 
 .nav {
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid transparent;
+  background: color-mix(in srgb, var(--bg) 93%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+}
+
+/* No backdrop-filter support: keep the bar opaque rather than see-through. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav { background: var(--bg); }
 }
 
 .nav-inner {
@@ -327,6 +337,27 @@ a.project:hover h3 {
   background: var(--surface);
 }
 
+.prose .figure {
+  margin: 28px 0 0;
+}
+
+.prose .figure img {
+  margin: 0;
+}
+
+.prose .figure figcaption {
+  margin: 10px 2px 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* Table cells hold grid images, which are labelled by their headers. */
+.prose td img {
+  margin: 0;
+  border-radius: 4px;
+}
+
 .prose hr {
   margin: 40px 0 0;
   border: none;
@@ -484,3 +515,113 @@ footer p { margin: 0; }
 
 /* Footer separators */
 footer .compact span[aria-hidden] { margin: 0 2px; }
+
+/* ============================================================
+   Scroll-driven motion
+
+   Everything here is progressive enhancement, guarded three ways:
+
+   1. `prefers-reduced-motion` — readers who ask for stillness get it.
+   2. `@supports (animation-timeline: view())` — Firefox still has
+      scroll-driven animations behind a flag, so it must never see the
+      hidden starting state. Without this guard its readers get a blank page.
+   3. Nothing above the fold participates. The name and the intro are painted
+      immediately; a reviewer skimming must never wait on an animation.
+   ============================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation-name: reveal-rise;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-duration: auto;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+
+    @keyframes reveal-rise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* Section rules draw themselves in from the left. */
+    .reveal-rule {
+      border-bottom-color: transparent;
+      background-image: linear-gradient(var(--border), var(--border));
+      background-repeat: no-repeat;
+      background-position: 0 100%;
+      background-size: 0% 1px;
+      animation-name: reveal-underline;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-duration: auto;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+
+    @keyframes reveal-underline {
+      from { background-size: 0% 1px; }
+      to   { background-size: 100% 1px; }
+    }
+
+    /* Figures get a touch of scale on top of the rise — they are the
+       imagery on these pages, so they can afford slightly more presence. */
+    .prose .figure {
+      animation-name: reveal-figure;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-duration: auto;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+
+    @keyframes reveal-figure {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* The bar is transparent over the top of the page and resolves into a
+       surface once the reader has scrolled past the header. */
+    .nav {
+      animation-name: nav-settle;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-duration: auto;
+      animation-timeline: scroll();
+      animation-range: 0 90px;
+    }
+
+    @keyframes nav-settle {
+      from {
+        background-color: transparent;
+        border-bottom-color: transparent;
+      }
+      to {
+        background-color: color-mix(in srgb, var(--bg) 93%, transparent);
+        border-bottom-color: var(--border);
+      }
+    }
+  }
+}
+
+/* Reduced motion, or no scroll-timeline support: the nav is simply a bar. */
+@media (prefers-reduced-motion: reduce) {
+  .nav { border-bottom-color: var(--border); }
+}
+
+@supports not (animation-timeline: view()) {
+  .nav { border-bottom-color: var(--border); }
+}

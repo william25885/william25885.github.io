@@ -100,7 +100,7 @@ supervision.
 Trained 100 epochs, batch size 8, AdamW at lr 3e-4, with a 10-epoch linear warmup followed by cosine
 decay.
 
-![SimCLR pretraining loss and learning rate](/media/medical/simclr_pretrain_loss_lr.png)
+![SimCLR pretraining: NT-Xent loss and the learning-rate schedule, 10 epochs of linear warmup followed by cosine decay.](/media/medical/simclr_pretrain_loss_lr.png)
 
 ## Training configuration
 
@@ -122,10 +122,10 @@ Model selection is on best validation Dice throughout.
 
 ## Learning curves
 
-| CNN U-Net | TransUNet | TransUNet + SimCLR |
-|---|---|---|
-| ![](/media/medical/simple_unet_loss_lr.png) | ![](/media/medical/transunet_loss_lr.png) | ![](/media/medical/transunet_simclr_loss_lr.png) |
-| ![](/media/medical/simple_unet_valDice.png) | ![](/media/medical/transunet_valDice.png) | ![](/media/medical/transunet_simclr_valDice.png) |
+| | CNN U-Net | TransUNet | TransUNet + SimCLR |
+|---|---|---|---|
+| **Loss & learning rate** | ![](/media/medical/simple_unet_loss_lr.png) | ![](/media/medical/transunet_loss_lr.png) | ![](/media/medical/transunet_simclr_loss_lr.png) |
+| **Validation Dice** | ![](/media/medical/simple_unet_valDice.png) | ![](/media/medical/transunet_valDice.png) | ![](/media/medical/transunet_simclr_valDice.png) |
 
 The curves show the effect that the final scores only imply. The randomly-initialised TransUNet
 fluctuates noticeably during training — a Transformer bottleneck at 1/16 resolution being asked to
