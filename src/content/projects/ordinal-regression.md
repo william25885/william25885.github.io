@@ -1,5 +1,5 @@
 ---
-title: "Go Rank Prediction as Ordinal Regression"
+title: "Go Rank Prediction"
 summary: "Predicting a Go player's rank from 1D to 9D out of game records at 80.65% accuracy — treating rank as an ordered quantity rather than nine unrelated classes, with predictions pooled across views, seeds and games."
 tags: ["Ordinal Regression", "CORAL", "Transformer", "BiLSTM", "CatBoost", "Ensemble", "PyTorch"]
 category: research
