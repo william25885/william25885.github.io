@@ -1,6 +1,7 @@
 const isImg = (n) => n.type === 'element' && n.tagName === 'img';
 const isBlank = (n) => n.type === 'text' && !n.value.trim();
 const isFigure = (n) => n.type === 'element' && n.tagName === 'figure';
+const isTable = (n) => n.type === 'element' && n.tagName === 'table';
 
 /** A paragraph holding nothing but one image, with its alt text as caption. */
 function toFigure(node) {
@@ -51,6 +52,20 @@ function walk(node) {
   const converted = node.children.map((child) => {
     const fig = toFigure(child);
     if (fig) return fig;
+
+    // A wide table must scroll inside its own box. Left bare, it pushes the
+    // whole page sideways on a phone — measured at 108px of horizontal
+    // overflow on a 375px viewport before this wrapper existed.
+    if (isTable(child)) {
+      walk(child);
+      return {
+        type: 'element',
+        tagName: 'div',
+        properties: { className: ['table-scroll'] },
+        children: [child],
+      };
+    }
+
     walk(child);
     return child;
   });

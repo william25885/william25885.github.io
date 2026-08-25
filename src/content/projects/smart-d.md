@@ -63,7 +63,10 @@ counters.
 output to a JSON object over eight legal subgoals:
 
 $$
-\Sigma_g = \{\texttt{GET\_ONION}, \texttt{PUT\_ONION}, \texttt{GET\_DISH}, \texttt{PICK\_SOUP}, \texttt{DELIVER}, \texttt{PLACE\_ON\_COUNTER}, \texttt{PICKUP\_FROM\_COUNTER}, \texttt{IDLE}\}
+\begin{aligned}
+\Sigma_g = \{\; &\texttt{GET\_ONION},\; \texttt{PUT\_ONION},\; \texttt{GET\_DISH},\; \texttt{PICK\_SOUP}, \\
+&\texttt{DELIVER},\; \texttt{PLACE\_ON\_COUNTER},\; \texttt{PICKUP\_FROM\_COUNTER},\; \texttt{IDLE} \;\}
+\end{aligned}
 $$
 
 Serving through **vLLM** is what makes this dependable rather than best-effort: its
