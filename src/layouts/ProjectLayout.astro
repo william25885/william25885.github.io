@@ -2,15 +2,25 @@
 import BaseLayout from './BaseLayout.astro';
 import TagList from '../components/TagList.astro';
 import type { CollectionEntry } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
 
 interface Props {
   project: CollectionEntry<'projects'>;
   prev?: CollectionEntry<'projects'>;
   next?: CollectionEntry<'projects'>;
+  headings?: MarkdownHeading[];
 }
 
-const { project, prev, next } = Astro.props;
+const { project, prev, next, headings = [] } = Astro.props;
 const { title, summary, tags, repo, liveDemo } = project.data;
+
+// A contents list earns its place only on pages long enough to get lost in.
+// Section count alone is a poor test — the short systems write-ups have six or
+// seven headings across a page you can take in at a glance. Length is the
+// better signal: the systems write-ups run to roughly 4,500 characters and the
+// research ones to 6,500 and up, so the threshold sits in the gap between them.
+const sections = headings.filter((h) => h.depth === 2);
+const showContents = sections.length >= 5 && (project.body?.length ?? 0) > 5600;
 ---
 <BaseLayout title={`${title} — Ting-Chen Cho`} description={summary}>
   <header class="project-header">
@@ -22,6 +32,17 @@ const { title, summary, tags, repo, liveDemo } = project.data;
       {repo && <a href={repo}>Source</a>}
     </p>
   </header>
+
+  {showContents && (
+    <nav class="toc" aria-label="Contents">
+      <p class="toc-title">Contents</p>
+      <ol>
+        {sections.map((h) => (
+          <li><a href={`#${h.slug}`}>{h.text}</a></li>
+        ))}
+      </ol>
+    </nav>
+  )}
 
   <article class="prose">
     <slot />

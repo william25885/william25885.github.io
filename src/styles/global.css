@@ -625,3 +625,90 @@ footer .compact span[aria-hidden] { margin: 0 2px; }
     grid-column: auto;
   }
 }
+
+/* ============================================================
+   Contents rail
+
+   Inline above the article by default. On screens with room to spare it
+   moves into the left gutter and follows the reader down the page — the
+   long project pages run to nine or ten sections, and a reader who wants
+   the results should not have to scroll through the method to reach them.
+   ============================================================ */
+
+.toc {
+  margin: 32px 0 0;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.toc-title {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.toc ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: toc;
+}
+
+.toc li {
+  counter-increment: toc;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.toc li + li {
+  margin-top: 7px;
+}
+
+.toc li::before {
+  content: counter(toc);
+  display: inline-block;
+  width: 1.5em;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.toc a {
+  color: var(--muted);
+  border-bottom: none;
+}
+
+.toc a:hover {
+  color: var(--accent);
+}
+
+/* Anchor jumps must clear the sticky nav, or the heading lands underneath it. */
+.prose h2,
+.prose h3 {
+  scroll-margin-top: 84px;
+}
+
+@media (min-width: 1240px) {
+  .toc {
+    position: sticky;
+    top: 96px;
+    float: left;
+    width: 200px;
+    margin: 0 0 0 -268px;
+    padding: 0 0 0 0;
+    border: none;
+    border-left: 1px solid var(--border);
+    padding-left: 18px;
+    background: none;
+  }
+
+  .toc li {
+    font-size: 13px;
+  }
+}
