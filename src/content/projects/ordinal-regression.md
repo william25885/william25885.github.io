@@ -1,31 +1,71 @@
 ---
 title: "Go Rank Prediction as Ordinal Regression"
-summary: "Predicting a Go player's rank from 1D to 9D out of game records — treating rank as an ordered quantity rather than nine unrelated classes, over a stacked ensemble of sequence and tabular models."
-tags: ["Ordinal Regression", "Transformer", "BiLSTM", "CatBoost", "Ensemble", "Feature Engineering", "PyTorch"]
+summary: "Predicting a Go player's rank from 1D to 9D out of game records at 80.65% accuracy — treating rank as an ordered quantity rather than nine unrelated classes, with predictions pooled across views, seeds and games."
+tags: ["Ordinal Regression", "CORAL", "Transformer", "BiLSTM", "CatBoost", "Ensemble", "PyTorch"]
 category: research
 order: 5
 repo: "https://github.com/william25885/Go-Rank-Prediction"
-context: "National Taiwan University"
+context: "Machine Learning, National Taiwan University"
 ---
 
-## The question
+## The task
 
-Given the move sequence of a Go game, how strong is the player? Ranks run 1D through 9D — nine
-categories, but not nine *arbitrary* categories. They are ordered, and the distance between them is
-meaningful: mistaking a 6D for a 7D is a near-miss, mistaking a 1D for a 9D is a total failure.
+Given the record of Go games played at an unknown rank, identify the rank: 1D through 9D. Each test
+sample is a file holding several games, all played at the same rank, and one rank must be predicted
+for the file as a whole.
 
-Standard multi-class cross-entropy cannot express that. It assigns the same loss to both errors,
-because it treats the labels as an unordered set. Discarding the ordering is discarding most of what
-the label structure tells you — so the central modelling decision here is to keep it, using an
-ordinal-regression objective (CORAL) rather than flat classification.
+**Held-out test accuracy: 80.65%**, sixth on the class leaderboard. Random guessing over nine
+classes scores 11%.
 
-## Input representation
+## Two accuracies, and why they differ
 
-Each game is a sequence of moves, and each move carries a rich feature vector derived from engine
-analysis: a 9-dimensional policy vector, a 9-dimensional value vector, a 9-dimensional rank
-probability vector, plus scalar strength, win rate, lead and uncertainty.
+The cross-validated accuracy over individual games is **42.8%**. The accuracy over test files is
+**80.65%**. Both are correct; they measure different things, and the distance between them is where
+most of the engineering went.
 
-That base is expanded to a **79-dimensional per-move feature vector**:
+A single game is weak evidence. A 5D playing carefully and a 6D playing loosely produce records that
+genuinely resemble each other, and no model recovers a distinction the input does not contain. What
+the task actually asks is easier: a file aggregates several games, so the same underlying signal
+arrives several times with independent noise.
+
+The system exploits that at three levels, all of them averaging distributions rather than voting on
+labels:
+
+1. **Views within a game.** Sequence models see 120 moves, but games run longer. Rather than pick a
+   window, six overlapping crops — opening, end, centre, and quarter positions — are scored and
+   averaged.
+2. **Seeds within a model.** Each sequence architecture is trained twice under different seeds, and
+   the two posteriors are averaged.
+3. **Games within a file.** Each game produces a full posterior over the nine ranks from the
+   meta-learner; the file's prediction is the argmax of their mean.
+
+Averaging posteriors rather than taking a majority vote matters at the third step in particular: a
+game the model finds ambiguous contributes a flat distribution and moves the file-level answer very
+little, whereas a hard vote would give it the same weight as a confident one.
+
+## What the input already contains
+
+Worth being precise about, because it changes what the model is doing. Each move carries:
+
+| Group | Dims | Source |
+|---|---|---|
+| Policy | 9 | Nine supervised models, each trained on games of one rank — the probability this move is played, according to each |
+| Value | 9 | The same nine models' predicted win rates for the position |
+| Rank probabilities | 9 | A dedicated rank model's estimate that the position belongs to each rank |
+| Strength | 1 | A relative playing-strength score |
+| KataGo analysis | 3 | Win rate, territory lead, and uncertainty |
+
+So a per-move rank estimate is *already an input feature*. This is not a system that infers rank
+from raw board positions — it is one that **aggregates and calibrates existing per-move rank signals
+across a game and across games**, which is a narrower problem and an honest description of it.
+
+That framing also explains why the tabular model reaches 20.3% on its own while the sequence models
+reach 38.5%: the signal is not in any single move's rank estimate but in how those estimates behave
+over the course of a game.
+
+## Feature construction
+
+The per-move vector is expanded from 30 raw values to **79 dimensions**:
 
 | Group | Dims | Content |
 |---|---|---|
@@ -35,110 +75,81 @@ That base is expanded to a **79-dimensional per-move feature vector**:
 | Second differences | 3 | Curvature of the key scalar signals |
 | Positional | 3 | Colour, normalised move index |
 
-The differences are the part that matters. A strong player is not identified by any single position
-evaluation — it is identified by how the evaluation *moves* under their play. A rank signal lives in
-the trajectory: how sharply the lead swings, how often the policy entropy spikes, whether
-uncertainty resolves or accumulates. First and second differences make that trajectory directly
-visible to the model rather than something it must infer through a recurrence.
+The differences are the part that matters. A rank signal lives in the *trajectory*: how sharply the
+lead swings, when policy entropy spikes, whether uncertainty resolves or accumulates. First and
+second differences put that in front of the model directly rather than leaving it to be inferred
+through a recurrence.
 
-Sequences are truncated to 120 moves.
+Win rate and lead are given from Black's perspective, so both are sign-flipped on White's moves —
+without that, the same position reads as opposite evidence depending on who is to play.
 
 ## Keeping the ordering: the CORAL head
 
-Each sequence model carries **two heads** on the same pooled representation: a standard
-classification head (`ce_logits`) and an ordinal head (`ord_logits`) implementing CORAL.
+Rank is ordered. Flat classification discards that: mistaking a 6D for a 7D and mistaking a 1D for a
+9D cost the same under cross-entropy.
 
-CORAL replaces "which of nine classes?" with eight nested binary questions — *is the rank above 1D?
-above 2D?* … *above 8D?* — sharing one representation, with monotonically ordered thresholds. Class
-probabilities are recovered by differencing adjacent cumulative probabilities:
+Each sequence model therefore carries **two heads** on the same pooled representation: a
+classification head and a CORAL ordinal head. CORAL replaces "which of nine classes?" with eight
+nested binary questions — *is the rank above 1D? above 2D?* … — and recovers class probabilities by
+differencing adjacent cumulative terms:
 
 $$
 P(y = k) = \sigma(\theta_{k-1}) - \sigma(\theta_k)
 $$
 
-with the endpoints taken as $1 - \sigma(\theta_0)$ and $\sigma(\theta_{K-2})$. Because the questions
-are nested, an error of one rank costs one flipped binary decision and an error of five costs five —
-the ordering is built into the loss surface rather than hoped for.
+Because the questions are nested, an error of one rank costs one flipped decision and an error of
+five costs five. The ordering is in the loss surface rather than hoped for.
 
-The training objective mixes three terms:
+The objective mixes three terms:
 
 $$
 \mathcal{L} = 0.28\,\mathcal{L}_{\text{CE}} + 0.70\,\mathcal{L}_{\text{BCE}} + 0.02\,\mathcal{L}_{\text{margin}}
 $$
 
-- $\mathcal{L}_{\text{BCE}}$ — the CORAL term, binary cross-entropy over the eight cumulative targets,
-  carrying most of the weight.
-- $\mathcal{L}_{\text{CE}}$ — ordinary cross-entropy, **weighted by inverse class frequency**. Rank
-  distributions are heavily imbalanced, and without reweighting the model drifts toward the crowded
-  middle ranks.
-- $\mathcal{L}_{\text{margin}}$ — a hinge penalty, $\mathrm{relu}(m - (\theta_j - \theta_{j+1}))$,
-  that pushes adjacent thresholds apart. CORAL assumes ordered thresholds but does not enforce it;
-  when they cross, the differencing step yields negative probabilities. This term costs 2% of the
-  loss weight and removes that failure mode.
+- $\mathcal{L}_{\text{BCE}}$ — the CORAL term over the eight cumulative targets, carrying most of the
+  weight.
+- $\mathcal{L}_{\text{CE}}$ — cross-entropy **weighted by inverse class frequency**, since without
+  reweighting the model drifts toward the crowded middle ranks.
+- $\mathcal{L}_{\text{margin}}$ — a hinge penalty pushing adjacent thresholds apart. CORAL assumes
+  ordered thresholds but does not enforce it, and when they cross the differencing step yields
+  negative probabilities. Two percent of the loss weight removes that failure mode.
 
-At prediction time the two heads are blended, $0.7$ CORAL + $0.3$ softmax. The ordinal head is the
-better-calibrated estimator of *where* on the scale a player sits; the classification head is
-sharper at picking a specific rank. Neither alone was as good as the mix.
+At prediction time the heads are blended $0.7$ CORAL + $0.3$ softmax — the ordinal head is better
+calibrated about *where* on the scale a player sits, the classification head sharper at committing
+to one rank.
 
 ## Models
 
-Three model families, each seeing the game differently:
+**Sequence.** A small Transformer and a BiLSTM over the 120×79 move sequence, both carrying the dual
+head. Out-of-fold accuracy 38.5% and 36.5% respectively, per game.
 
-**Sequence models.** A small Transformer and a BiLSTM over the 120×79 move sequence, both carrying
-the dual head above. These see order and context — the Transformer attends across the whole game,
-the BiLSTM reads it in both directions.
+**Tabular.** CatBoost over statistical summaries — mean, standard deviation, min, max, median,
+quartiles, skewness of every feature — computed separately over **opening, midgame and endgame**.
+This deliberately discards move order for robustness, while the segmentation keeps the one ordering
+fact that matters most: strength is not uniform across a game's phases. 20.3% per game.
 
-**Tabular model.** CatBoost (with `HistGradientBoostingClassifier` as fallback) over statistical
-summaries of each game: mean, standard deviation, min, max, median, quartiles and skewness of every
-feature, computed separately over **opening, midgame and endgame segments**. This deliberately throws
-away move order to gain robustness, and the segmentation preserves the one ordering fact that
-matters most — playing strength is not uniform across a game's phases.
-
-**Meta-learner.** Logistic regression stacking the sequence and tabular predictions together with 10
+**Meta-learner.** Logistic regression stacking the three models' out-of-fold probabilities with 10
 side features (policy/value/rank entropies, log game length, win-rate standard deviation, mean
-absolute lead, mean uncertainty, and per-phase policy entropy).
+absolute lead, mean uncertainty, per-phase policy entropy).
 
-Everything is fit under 5-fold cross-validation.
+The ensemble is worth more than its parts: 42.8% per game against the best component's 38.5%,
+*including* a component that scores 20.3% alone. A weak model still contributes when its errors are
+uncorrelated with the strong ones, and the tabular model's are — it cannot see move order at all, so
+it fails on different games. Dropping it for being weak in isolation would have cost accuracy.
 
-## Results
+## What is not measured
 
-| Model | Accuracy |
-|---|---|
-| Tabular (CatBoost / HGBT) | ~20.3% |
-| BiLSTM | ~36.5% |
-| Transformer | ~38.5% |
-| **Stacked ensemble** | **~42.8%** |
+Two things I would want before claiming more than the leaderboard number does.
 
-Nine-way classification has a 11.1% random baseline, so the ensemble runs at roughly four times
-chance.
+**The ordinal objective is never tested against its alternative.** CORAL was chosen so that
+near-misses cost less than gross errors, but the task is scored on exact-match accuracy — which
+treats being wrong by one rank and wrong by five identically, and so cannot see the property CORAL
+was selected for. Mean absolute rank error, and an ablation against a plain cross-entropy head,
+would show whether it earned its place. The two heads are trained together and blended at inference,
+so their separate contributions were never isolated.
 
-The interesting number is the ensemble's margin. It beats its best component by 4.3 points while
-including a component that scores only 20.3% on its own — barely twice chance. A weak model still
-contributes if its errors are uncorrelated with the strong ones, and the tabular model's errors
-should be: it cannot see move order at all, so it fails on entirely different games than the
-sequence models do. Dropping it for being weak in isolation would have cost accuracy.
-
-## Multi-view inference
-
-Long games are unstable to score. A single 120-move window samples one slice of a game that may run
-far longer, and which slice you take moves the prediction.
-
-At inference, sequence models are therefore evaluated over multiple views of each game and their
-predictions are pooled before reaching the meta-learner. This is variance reduction on essentially
-free compute — the same weights, applied several times — and it matters most on exactly the long
-games where a single view is least representative.
-
-## What limits the result
-
-Accuracy near 43% on a nine-way ordered problem is well above chance but far from resolved, and the
-ceiling is probably in the labels rather than the model. Rank is a property of a *player*, measured
-over hundreds of games, while the input here is a *single* game. A strong player playing loosely and
-a weak player playing carefully produce genuinely similar records — the label is noisy with respect
-to the input, and no amount of modelling recovers information the input does not contain.
-
-The gap in the evaluation is that accuracy is the wrong metric for the model that was actually
-built. A prediction wrong by one rank and a prediction wrong by five score identically under it —
-which is precisely the distinction the CORAL objective was chosen to capture. Mean absolute rank
-error, reported alongside an ablation against flat cross-entropy, would show whether the ordinal
-head earned its place. That comparison has not been run, so the claim here is about the design, not
-a measured gain.
+**The stacking figure is optimistic.** The 42.8% comes from fitting the meta-learner and scoring it
+on the same rows. The three base models' contributions are genuinely out-of-fold, and a logistic
+regression over 37 features has little capacity to overfit, so the bias should be small — but it is
+not zero, and the number is labelled out-of-fold in the code when it is not. The 80.65% is unaffected:
+that is a held-out test set scored by the organisers.
