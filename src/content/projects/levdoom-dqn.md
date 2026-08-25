@@ -5,7 +5,6 @@ tags: ["Deep RL", "Rainbow DQN", "Mixture of Experts", "RND", "ViZDoom", "Model 
 category: research
 order: 3
 repo: "https://github.com/william25885/levdoom-scene-specialized-dqn"
-context: "Deep Reinforcement Learning, National Taiwan University"
 ---
 
 ## The benchmark and the design decision

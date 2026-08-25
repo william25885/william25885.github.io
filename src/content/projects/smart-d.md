@@ -5,7 +5,6 @@ tags: ["Multi-Agent RL", "PPO", "LLM Planning", "Self-Distillation", "Overcooked
 category: research
 order: 2
 repo: "https://github.com/william25885/SMART-D"
-context: "Deep Reinforcement Learning final project, National Taiwan University"
 ---
 
 > **A three-person project.** SMART-D was built with Bryan Andersen and Cheng Ru Shu at National

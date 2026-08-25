@@ -5,7 +5,6 @@ tags: ["Self-Supervised Learning", "SimCLR", "TransUNet", "U-Net", "PyTorch", "C
 category: research
 order: 4
 repo: "https://github.com/william25885/Medical_imaging"
-context: "Machine Learning, National Taiwan University"
 ---
 
 ## The question

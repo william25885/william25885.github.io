@@ -5,7 +5,6 @@ tags: ["PyTorch", "Diffusion", "DDPM / DDIM", "GAN", "MeanFlow", "Optimal Transp
 category: research
 order: 1
 repo: "https://github.com/william25885/Generative-Models"
-context: "Machine Learning (CSIE5043), National Taiwan University"
 ---
 
 ## The question

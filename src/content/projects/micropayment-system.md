@@ -5,7 +5,6 @@ tags: ["C++", "OpenSSL", "TLS", "POSIX Threads", "Socket Programming", "P2P"]
 category: systems
 order: 6
 repo: "https://github.com/william25885/Micropayment-System"
-context: "Computer Networks, National Taiwan University"
 ---
 
 ## The design decision

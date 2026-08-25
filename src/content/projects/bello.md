@@ -6,7 +6,6 @@ category: systems
 order: 7
 repo: "https://github.com/william25885/Bello"
 liveDemo: "https://bello-tw.vercel.app/"
-context: "Web Application Programming final project, National Taiwan University"
 ---
 
 ## What it does

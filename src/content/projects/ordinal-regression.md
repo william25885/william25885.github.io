@@ -5,7 +5,6 @@ tags: ["Ordinal Regression", "CORAL", "Transformer", "BiLSTM", "CatBoost", "Ense
 category: research
 order: 5
 repo: "https://github.com/william25885/Go-Rank-Prediction"
-context: "Machine Learning, National Taiwan University"
 ---
 
 ## The task
@@ -14,7 +13,7 @@ Given the record of Go games played at an unknown rank, identify the rank: 1D th
 sample is a file holding several games, all played at the same rank, and one rank must be predicted
 for the file as a whole.
 
-**Held-out test accuracy: 80.65%**, sixth on the class leaderboard. Random guessing over nine
+**Held-out test accuracy: 80.65%**, scored on a set the model never saw. Random guessing over nine
 classes scores 11%.
 
 ## Two accuracies, and why they differ

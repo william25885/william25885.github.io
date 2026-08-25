@@ -14,7 +14,6 @@ const projects = defineCollection({
     liveDemo: z.string().url().optional(),
     demoComponent: z.string().optional(),
     demoData: z.string().optional(),
-    context: z.string().optional(),
     draft: z.boolean().default(false),
   }),
 });

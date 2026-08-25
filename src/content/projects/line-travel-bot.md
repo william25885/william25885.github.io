@@ -6,7 +6,6 @@ category: systems
 order: 8
 repo: "https://github.com/william25885/Line-Travel-Bot"
 liveDemo: "https://wp1141-mrbm.vercel.app"
-context: "Web Application Programming, National Taiwan University"
 ---
 
 ## What it does
