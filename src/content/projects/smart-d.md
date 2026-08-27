@@ -124,8 +124,7 @@ with $c_v = 0.5$, $c_H = 0.01$, and gradients clipped to a global norm of 0.5.
 
 ## The coupled schedule
 
-A fixed distillation coefficient does not work, because early in training the teacher is not yet
-worth imitating. Two schedules are therefore run against each other over $N$ training iterations.
+Two schedules run against each other over $N$ training iterations.
 
 The reward-shaping weight holds, then decays:
 
@@ -154,8 +153,8 @@ sparse task reward.
 ## Measuring whether the distillation worked
 
 Every 50 training iterations, 20 evaluation episodes are played **twice** under deterministic
-actions: once with the subgoal embedding zeroed, once with live LLM subgoals. The distillation gap
-is the difference,
+actions: once with the subgoal embedding zeroed, once with live LLM subgoals refreshed every 50
+steps rather than the 20 used in training. The distillation gap is the difference,
 
 $$
 \Delta_{\mathrm{SD}} = \bar{R}_{\mathrm{LLM}} - \bar{R}_{0}

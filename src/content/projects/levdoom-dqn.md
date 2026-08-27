@@ -40,7 +40,7 @@ strongest exploration incentives.
 ## Routing
 
 Each level has a distinct visual identity: wall colours, enemy sprites, map scale. A small CNN
-(three convolutional layers → global average pool → linear, roughly 53 KB) identifies the level from
+(three convolutional layers → global average pool → linear, 51.6 KB) identifies the level from
 raw frames.
 
 At episode start the classifier **accumulates logits over the first 3 steps**, averages them, and
@@ -150,7 +150,7 @@ weights are downcast to FP16:
 compressed = {k: v.half() if v.is_floating_point() else v for k, v in state_dict.items()}
 ```
 
-Total payload: **31.69 MB**, with no measured change in behaviour. Action selection is `argmax` over
+Total payload: **31.67 MB**, with no measured change in behaviour. Action selection is `argmax` over
 Q-values, so only the *ordering* of Q-values matters, and FP16 truncation sits far below the margin
 separating actions in practice.
 
