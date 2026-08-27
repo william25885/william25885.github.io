@@ -75,6 +75,12 @@ oversized and resized on read.
 
 Meetups can be password-protected, which is how a private gathering coexists with a public listing.
 
+**On "real-time".** Messages arrive by polling once a second, not over a socket. That is a
+consequence of the deployment target rather than a shortcut: the backend runs as Vercel serverless
+functions, where each request is an isolated invocation and no process stays alive to hold a
+connection open. A second of latency is imperceptible in a chat between two people arranging lunch,
+and it buys a backend that costs nothing when nobody is talking.
+
 ## Admin console
 
 Administrators can browse and search all meetups and users, cancel or end meetups, delete users, and
