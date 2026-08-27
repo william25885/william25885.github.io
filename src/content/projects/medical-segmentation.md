@@ -91,8 +91,8 @@ pretraining.
 
 The augmentation policy carries the whole method — it defines what the encoder is asked to treat as
 irrelevant. Random resized crop (scale 0.08–1.0), horizontal *and* vertical flips, ±15° rotation,
-mild affine jitter, Gaussian blur and Gaussian noise. Vertical flips are included here and almost
-absent from the supervised policy, which is deliberate: medical images of this kind have no
+mild affine jitter, Gaussian blur and Gaussian noise. Vertical flips are included here and absent
+from the supervised policy, which is deliberate: medical images of this kind have no
 canonical up, so orientation is genuinely nuisance information, and telling the encoder so is free
 supervision.
 
