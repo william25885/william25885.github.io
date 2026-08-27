@@ -58,21 +58,17 @@ So a per-move rank estimate is *already an input feature*. This is not a system 
 from raw board positions — it is one that **aggregates and calibrates existing per-move rank signals
 across a game and across games**, which is a narrower problem and an honest description of it.
 
-That framing also explains why the tabular model reaches 20.3% on its own while the sequence models
-reach 38.5%: the signal is not in any single move's rank estimate but in how those estimates behave
-over the course of a game.
-
 ## Feature construction
 
 The per-move vector is expanded from 30 raw values to **79 dimensions**:
 
 | Group | Dims | Content |
 |---|---|---|
-| Base | 30 | Policy, Value, RankP (9 each) + strength, win rate, lead, uncertainty |
+| Base | 31 | Policy, Value, RankP (9 each) + strength, win rate, lead, uncertainty |
 | Derived | 6 | Per-vector maxima and entropies |
-| First differences | 37 | Move-to-move change across all features |
-| Second differences | 3 | Curvature of the key scalar signals |
-| Positional | 3 | Colour, normalised move index |
+| First differences | 37 | Move-to-move change across the base and derived features |
+| Second differences | 3 | Curvature of strength, win rate and lead |
+| Positional | 2 | Colour, normalised move index |
 
 The differences are the part that matters. A rank signal lives in the *trajectory*: how sharply the
 lead swings, when policy entropy spikes, whether uncertainty resolves or accumulates. First and
