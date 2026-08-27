@@ -43,6 +43,9 @@ behaviour is.
 
 ## Results
 
+DDIM is not a separately trained model: it loads the same checkpoint as DDPM and changes only the
+sampler, so the rows below differ in inference procedure alone. All DDIM rows use $\eta = 1.0$.
+
 | Method | Steps (NFE) | ED | WD |
 |---|---|---|---|
 | GAN | 1 | 0.0127 | 0.4700 |
@@ -54,11 +57,7 @@ behaviour is.
 | DDIM | 1 | 1.2627 | 4.0667 |
 | MeanFlow | 1 | 0.0037 | 0.3464 |
 
-Four things fall out of this table.
-
-**Iterative denoising beats adversarial training here.** DDPM reaches an ED of 0.0025 against the
-GAN's 0.0127 — a factor of five on a distribution whose difficulty is precisely its multi-modality,
-the failure mode GANs are known for.
+Three things fall out of this table.
 
 **Most of the thousand steps are wasted.** DDIM at 100 steps is not merely as good as DDPM at 1000
 — it is *better*, on both metrics. A 10× reduction in sampling cost that improves quality is not a
@@ -98,8 +97,7 @@ Fixing the budget at 50 steps:
 Deterministic sampling is the worst setting by a wide margin — more than double the ED of the best.
 The plausible reading is mode collapse: with no injected noise, every trajectory from a given
 starting point lands in the same place, and a checkerboard's separated modes are exactly what that
-under-covers. The two metrics then split at the top end, with ED preferring $\eta = 0.75$ and WD
-preferring $\eta = 1.0$, which is small enough to be within run-to-run variation.
+under-covers.
 
 ## Ablation: time embedding
 
@@ -119,18 +117,17 @@ it from a training signal that is only indirectly about time.
 
 ![2-Wasserstein distance against training epochs. The same ordering holds under a second, unrelated metric.](/media/generative/gan_ddpm_meanflow_wasserstein.png)
 
-The loss curves show the expected split in training character. GAN generator and discriminator
-losses oscillate against each other throughout, and the distribution metrics oscillate with them.
-DDPM's noise-prediction MSE descends smoothly and flattens — the objective is a plain regression
-and behaves like one. MeanFlow, trained with a Huber loss and JVP-based targets, converges about as
+The curves show the expected split in training character. GAN generator and discriminator losses
+oscillate against each other throughout, and the distribution metrics oscillate with them. DDPM's
+noise-prediction MSE descends smoothly and flattens — the objective is a plain regression and
+behaves like one. MeanFlow, trained with a Huber loss and JVP-based targets, converges about as
 stably as DDPM despite generating in one step.
+
+The animations show what a scalar metric cannot: which parts of the distribution are being won and
+lost while that number moves.
 
 ![GAN — the global structure appears early, then modes wobble as generator and discriminator trade off.](/media/generative/gan_training.gif)
 
 ![DDPM — noise resolves into the checkerboard monotonically, with boundaries sharpening throughout.](/media/generative/ddpm_training.gif)
 
 ![MeanFlow — comparable convergence to DDPM, reached with a one-step sampler.](/media/generative/meanflow_training.gif)
-
-The animations show the same story at the level of the distribution: the GAN grabs the global
-checkerboard structure early and then wobbles between modes, while DDPM sharpens its boundaries
-monotonically.
